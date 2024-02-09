@@ -67,7 +67,7 @@ namespace BuildsManager.Core
 
         public static void LoadSettings()
         {
-            const string SETTINGS_DEFAULT_PATH = "Assets/Editor/Setting/BuildSequences.asset";
+            const string SETTINGS_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/GeneralBuildData.asset";
             const string SETTINGS_PATH_KEY = "BuildManagerWindow.SettingsPath";
 
             var settingsPath = PlayerPrefs.GetString(SETTINGS_PATH_KEY, "");
@@ -83,10 +83,10 @@ namespace BuildsManager.Core
 
             if (string.IsNullOrEmpty(settingsPath))
             {
-                var guids = AssetDatabase.FindAssets("t:BuildManagerSettings", new[] { "Assets" });
+                var guids = AssetDatabase.FindAssets("t:GeneralBuildData", new[] { "Assets" });
                 if (guids.Length >= 2)
                 {
-                    Debug.LogError("2+ BuildManagerSettings exist. Consider on using only 1 setting. " +
+                    Debug.LogError("2+ GeneralBuildData exist. Consider on using only 1 setting. " +
                                    "The first one will be used.");
                 }
 
@@ -96,8 +96,6 @@ namespace BuildsManager.Core
                     PlayerPrefs.SetString(SETTINGS_PATH_KEY, settingsPath);
                     GeneralBuildData = AssetDatabase.LoadAssetAtPath<GeneralBuildData>(settingsPath);
                 }
-
-                Debug.Log("2");
             }
 
             if (GeneralBuildData == null)
