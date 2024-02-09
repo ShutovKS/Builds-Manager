@@ -17,6 +17,6 @@ MonoBehaviour:
   builds: []
   addonsUsed: 0
   generalScriptingDefineSymbols: 
-  outputRoot: 
-  middlePath: 
-  dirPathForPostProcess: 
+  outputRoot: Builds/
+  middlePath: $NAME_$VERSION_$PLATFORM/$NAME_$VERSION/$NAME$EXECUTABLE
+  dirPathForPostProcess: $NAME_$VERSION_$PLATFORM

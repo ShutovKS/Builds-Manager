@@ -15,9 +15,9 @@ namespace BuildsManager.Data
         public AddonsUsedType addonsUsed;
         public string generalScriptingDefineSymbols;
 
-        public string outputRoot;
-        public string middlePath;
-        public string dirPathForPostProcess;
+        public string outputRoot = "Builds/";
+        public string middlePath = "$NAME_$VERSION_$PLATFORM/$NAME_$VERSION/$NAME$EXECUTABLE";
+        public string dirPathForPostProcess = "$NAME_$VERSION_$PLATFORM";
 
         public object Clone()
         {
