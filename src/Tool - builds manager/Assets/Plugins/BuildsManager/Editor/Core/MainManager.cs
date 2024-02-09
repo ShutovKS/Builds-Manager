@@ -129,14 +129,19 @@ namespace BuildsManager.Core
                 buildData.buildPath = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
                     buildData, GeneralBuildData.middlePath);
 
-                BaseBuild(
-                    buildData.targetGroup,
-                    buildData.target,
-                    buildData.options,
-                    buildData.buildPath,
-                    buildData.addonsUsed,
-                    GeneralBuildData.isReleaseBuild
-                );
+                var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path)
+                    .ToArray();
+
+                var buildPlayerOptions = new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = buildData.buildPath,
+                    targetGroup = buildData.targetGroup,
+                    target = buildData.target,
+                    options = buildData.options,
+                };
+
+                BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
             }
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
@@ -145,39 +150,36 @@ namespace BuildsManager.Core
 
         #region Base methods
 
-        private static void BaseBuild(BuildTargetGroup buildTargetGroup, BuildTarget buildTarget,
-            BuildOptions buildOptions, string buildPath, AddonsUsedType addonsUsedType, bool isReleaseBuild)
+        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, AddonsUsedType addonsUsedType,
+            bool isReleaseBuild)
         {
-            if (buildTargetGroup == BuildTargetGroup.Android
-                && PlayerSettings.Android.useCustomKeystore
-                && string.IsNullOrEmpty(PlayerSettings.Android.keyaliasPass))
+            var targetGroup = buildPlayerOptions.targetGroup;
+
+            if (targetGroup == BuildTargetGroup.Android && PlayerSettings.Android.useCustomKeystore &&
+                string.IsNullOrEmpty(PlayerSettings.Android.keyaliasPass))
             {
                 PlayerSettings.Android.keyaliasPass = PlayerSettings.Android.keystorePass = "keystore";
             }
 
-            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
 
-            switch (buildTargetGroup, isReleaseBuild)
+            switch (buildTargetGroup: targetGroup, isReleaseBuild)
             {
                 case (BuildTargetGroup.Standalone, true):
-                    buildOptions |= BuildOptions.CompressWithLz4;
                     PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
                     PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
                     break;
                 case (BuildTargetGroup.Standalone, false):
-                    buildOptions &= ~(BuildOptions.CompressWithLz4 | BuildOptions.CompressWithLz4HC);
                     PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
                     PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
                     break;
 
                 case (BuildTargetGroup.Android, true):
-                    buildOptions |= BuildOptions.CompressWithLz4;
                     PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
                     PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
                     PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
                     break;
                 case (BuildTargetGroup.Android, false):
-                    buildOptions &= ~(BuildOptions.CompressWithLz4 | BuildOptions.CompressWithLz4HC);
                     PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
                     PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
                     PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
@@ -190,15 +192,6 @@ namespace BuildsManager.Core
                     PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
                     break;
             }
-
-            var buildPlayerOptions = new BuildPlayerOptions
-            {
-                scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray(),
-                locationPathName = buildPath,
-                targetGroup = buildTargetGroup,
-                target = buildTarget,
-                options = buildOptions,
-            };
 
             var scriptingDefineSymbolsOld = GeneralBuildData.generalScriptingDefineSymbols;
             var scriptingDefineSymbols =
