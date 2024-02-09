@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BuildsManager.Data;
-using BuildsManager.Tools;
+using BuildsManager.Utility;
 using Ionic.Zip;
 using UnityEditor;
 using UnityEditor.Build;

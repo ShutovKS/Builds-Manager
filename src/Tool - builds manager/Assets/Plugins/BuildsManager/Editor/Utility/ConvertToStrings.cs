@@ -2,7 +2,7 @@ using System;
 using BuildsManager.Data;
 using UnityEditor;
 
-namespace BuildsManager.Tools
+namespace BuildsManager.Utility
 {
     public static class ConvertToStrings
     {

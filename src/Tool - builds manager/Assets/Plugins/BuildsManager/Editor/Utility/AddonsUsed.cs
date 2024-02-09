@@ -1,6 +1,6 @@
 using BuildsManager.Data;
 
-namespace BuildsManager.Tools
+namespace BuildsManager.Utility
 {
     public static class AddonsUsed
     {
