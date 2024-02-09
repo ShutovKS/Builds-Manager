@@ -11,7 +11,8 @@ namespace BuildsManager.Data
         public bool isNeedZip = false;
 
         public List<BuildData> builds = new();
-
+        
+        public AddonsUsedType addonsUsed;
         public string generalScriptingDefineSymbols;
 
         public string outputRoot;
