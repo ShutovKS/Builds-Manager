@@ -162,46 +162,28 @@ namespace BuildsManager.Core
             }
 
             var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
+            EditorUserBuildSettings.SwitchActiveBuildTarget(namedBuildTarget, buildPlayerOptions.target);
 
-            switch (buildTargetGroup: targetGroup, isReleaseBuild)
+            var implementation = isReleaseBuild ? ScriptingImplementation.IL2CPP : ScriptingImplementation.Mono2x;
+            PlayerSettings.SetScriptingBackend(namedBuildTarget, implementation);
+
+            var configuration = isReleaseBuild ? Il2CppCompilerConfiguration.Master : Il2CppCompilerConfiguration.Debug;
+            PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, configuration);
+
+            if (targetGroup == BuildTargetGroup.Android)
             {
-                case (BuildTargetGroup.Standalone, true):
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    break;
-                case (BuildTargetGroup.Standalone, false):
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    break;
-
-                case (BuildTargetGroup.Android, true):
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
-                    break;
-                case (BuildTargetGroup.Android, false):
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
-                    break;
-
-                case (BuildTargetGroup.WebGL, true):
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    break;
-                case (BuildTargetGroup.WebGL, false):
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    break;
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
             }
 
-            var scriptingDefineSymbolsOld = GeneralBuildData.generalScriptingDefineSymbols;
-            var scriptingDefineSymbols =
-                scriptingDefineSymbolsOld + ";" + AddonsUsed.GetScriptingDefineSymbols(addonsUsedType);
-
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, scriptingDefineSymbols);
+            var preBuildDefines = GeneralBuildData.generalScriptingDefineSymbols;
+            var buildDefines = preBuildDefines + ";" + AddonsUsed.GetScriptingDefineSymbols(addonsUsedType);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, buildDefines);
+            
+            
 
             var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, scriptingDefineSymbolsOld);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, preBuildDefines);
 
             var summary = buildReport!.summary;
 
