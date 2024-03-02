@@ -179,7 +179,7 @@ namespace BuildsManager.Core
             var buildDefines = preBuildDefines + ";" + AddonsUsed.GetScriptingDefineSymbols(addonsUsedType);
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, buildDefines);
             
-            
+            AssetDatabase.Refresh();
 
             var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
