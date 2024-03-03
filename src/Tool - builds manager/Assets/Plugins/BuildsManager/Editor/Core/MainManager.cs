@@ -56,7 +56,7 @@ namespace BuildsManager.Core
             var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
             var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
             var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
-            
+
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
             {
                 var buildData = GeneralBuildData.builds[i];
@@ -80,9 +80,45 @@ namespace BuildsManager.Core
                     options = buildData.options,
                 };
 
+                PreBuild(buildData);
+
                 BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
-                
+
                 PostBuild(buildData);
+            }
+
+            EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
+        }
+
+        private static void BuildOne(BuildData buildData)
+        {
+            var targetBeforeStart = EditorUserBuildSettings.activeBuildTarget;
+            var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
+            var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
+            var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
+
+            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+
+            var buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
+                    buildData, GeneralBuildData.middlePath),
+                target = buildData.target,
+                options = buildData.options,
+            };
+
+            PreBuild(buildData);
+
+            BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
+
+            PostBuild(buildData);
+
+            if (buildData.isCompress)
+            {
+                BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate, buildData,
+                    GeneralBuildData.dirPathForPostProcess));
             }
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
@@ -109,38 +145,6 @@ namespace BuildsManager.Core
 
                 Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
             }
-        }
-
-        private static void BuildOne(BuildData buildData)
-        {
-            var targetBeforeStart = EditorUserBuildSettings.activeBuildTarget;
-            var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
-            var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
-            var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
-
-            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
-
-            var buildPlayerOptions = new BuildPlayerOptions
-            {
-                scenes = scenes,
-                locationPathName = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
-                    buildData, GeneralBuildData.middlePath),
-                target = buildData.target,
-                options = buildData.options,
-            };
-
-            BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
-            
-            PostBuild(buildData);
-
-            if (buildData.isCompress)
-            {
-                BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate, buildData,
-                    GeneralBuildData.dirPathForPostProcess));
-            }
-
-            EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
 
         #region Base methods
@@ -198,10 +202,20 @@ namespace BuildsManager.Core
             }
         }
 
+        private static void PreBuild(BuildData buildData)
+        {
+            var buildPath = buildData.buildPath;
+
+            if (!string.IsNullOrEmpty(buildPath))
+            {
+                DestroyBuildDirectory(buildPath);
+            }
+        }
+
         private static void PostBuild(BuildData buildData)
         {
             var buildPath = buildData.buildPath;
-            
+
             if (GeneralBuildData.isReleaseBuild && !string.IsNullOrEmpty(buildPath))
             {
                 DestroyIL2CPPJunk(buildPath);
@@ -328,8 +342,25 @@ namespace BuildsManager.Core
             {
                 Directory.Delete(dir, true);
             }
+
             var pathToUnityCrashHandler = Path.Combine(buildRootPath, "UnityCrashHandler64.exe");
             File.Delete(pathToUnityCrashHandler);
+        }
+
+        private static void DestroyBuildDirectory(string buildPath)
+        {
+            if (Directory.Exists(buildPath))
+            {
+                Directory.Delete(buildPath, true);
+            }
+            else if (File.Exists(buildPath))
+            {
+                var dirs = Directory.GetParent(buildPath!)?.FullName;
+                if (dirs != null)
+                {
+                    Directory.Delete(dirs, true);
+                }
+            }
         }
 
         #endregion
