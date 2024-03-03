@@ -133,10 +133,8 @@ namespace BuildsManager.Window
 
                     settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
                     settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
-                    settingsBuild.buildPath = EditorGUILayout.TextField("Build Path", settingsBuild.buildPath);
-                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
-                    settingsBuild.targetGroup = (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
+                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     DrawAddonsUsed(ref settingsBuild);
 
                     if (GUILayout.Button("Remove", GUILayout.Width(80)))
