@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -30,28 +31,9 @@ namespace BuildsManager.Core
 
             var startTime = DateTime.Now;
             _usedDate = DateTime.Now;
-
-
+            
             BuildAll();
-
-            for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
-            {
-                var buildData = GeneralBuildData.builds[i];
-
-                if (!buildData.isCompress || !buildData.isEnabled || buildData.targetGroup == BuildTargetGroup.Android)
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(buildData.buildPath))
-                {
-                    BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
-                        buildData, GeneralBuildData.dirPathForPostProcess));
-                    return;
-                }
-
-                Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
-            }
+            CompressAll();
 
             Debug.Log($@"End building all. Elapsed time: {(DateTime.Now - startTime).ToString()}");
 
@@ -104,6 +86,51 @@ namespace BuildsManager.Core
                 AssetDatabase.CreateAsset(GeneralBuildData, SETTINGS_DEFAULT_PATH);
                 PlayerPrefs.SetString(SETTINGS_PATH_KEY, SETTINGS_DEFAULT_PATH);
             }
+
+            var addonsUsedData = LoadAddonsUsedData();
+            GeneralBuildData.addonsUsedData = addonsUsedData;
+        }
+
+        private static AddonsUsedData LoadAddonsUsedData()
+        {
+            const string ADDONS_USED_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/AddonsUsedData.asset";
+            const string ADDONS_USED_PATH_KEY = "BuildManagerWindow.AddonsUsedPath";
+
+            var addonsUsedPath = PlayerPrefs.GetString(ADDONS_USED_PATH_KEY, "");
+
+            if (!string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var addonsUsedData = AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
+                if (addonsUsedData == null)
+                {
+                    addonsUsedPath = null;
+                }
+            }
+
+            if (string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var guids = AssetDatabase.FindAssets("t:AddonsUsedData", new[] { "Assets" });
+                if (guids.Length >= 2)
+                {
+                    Debug.LogError("2+ AddonsUsedData exist. Consider on using only 1 setting. " +
+                                   "The first one will be used.");
+                }
+
+                if (guids.Length != 0)
+                {
+                    addonsUsedPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, addonsUsedPath);
+                }
+            }
+
+            if (string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var addonsUsedData = (AddonsUsedData)ScriptableObject.CreateInstance(typeof(AddonsUsedData));
+                AssetDatabase.CreateAsset(addonsUsedData, ADDONS_USED_DEFAULT_PATH);
+                PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, ADDONS_USED_DEFAULT_PATH);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
         }
 
         #endregion
@@ -147,10 +174,32 @@ namespace BuildsManager.Core
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
+        
+        private static void CompressAll()
+        {
+            for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
+            {
+                var buildData = GeneralBuildData.builds[i];
+
+                if (!buildData.isCompress || !buildData.isEnabled || buildData.targetGroup == BuildTargetGroup.Android)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(buildData.buildPath))
+                {
+                    BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
+                        buildData, GeneralBuildData.dirPathForPostProcess));
+                    return;
+                }
+
+                Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
+            }
+        }
 
         #region Base methods
 
-        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, AddonsUsedType addonsUsedType,
+        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, IEnumerable<AddonUsed> addonsUsed,
             bool isReleaseBuild)
         {
             var targetGroup = buildPlayerOptions.targetGroup;
@@ -176,9 +225,10 @@ namespace BuildsManager.Core
             }
 
             var preBuildDefines = GeneralBuildData.generalScriptingDefineSymbols;
-            var buildDefines = preBuildDefines + ";" + AddonsUsed.GetScriptingDefineSymbols(addonsUsedType);
+            var buildDefines = addonsUsed.Aggregate(preBuildDefines,
+                (current, addonUsed) => current + ";" + string.Join(";", addonUsed.defines));
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, buildDefines);
-            
+
             AssetDatabase.Refresh();
 
             var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
