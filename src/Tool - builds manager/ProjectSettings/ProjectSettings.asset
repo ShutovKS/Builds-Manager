@@ -844,15 +844,18 @@ PlayerSettings:
   scriptingDefineSymbols:
     Android: 
     PS4: 
-    Standalone: 1;2;3;1;2;3
+    Standalone: 
+    WebGL: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
-    Android: 0
+    Android: 1
     Standalone: 1
+    WebGL: 1
   il2cppCompilerConfiguration:
-    Android: 0
+    Android: 2
     Standalone: 2
+    WebGL: 2
   il2cppCodeGeneration: {}
   il2cppStacktraceInformation: {}
   managedStrippingLevel:

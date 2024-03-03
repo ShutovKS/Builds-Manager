@@ -143,7 +143,7 @@ namespace BuildsManager.Window
                     
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
                     settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
-                    DrawAddonsUsed(ref settingsBuild);
+                    DrawAddonsUsed(settingsBuild);
 
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.FlexibleSpace();
@@ -177,7 +177,7 @@ namespace BuildsManager.Window
 
             return;
 
-            static void DrawAddonsUsed(ref BuildData buildData)
+            static void DrawAddonsUsed(BuildData buildData)
             {
                 if (Settings == null || Settings.addonsUsedData == null || Settings.addonsUsedData.addonsUsed == null)
                 {
