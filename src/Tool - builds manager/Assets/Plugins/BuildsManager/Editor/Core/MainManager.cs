@@ -79,6 +79,8 @@ namespace BuildsManager.Core
                     target = buildData.target,
                     options = buildData.options,
                 };
+                
+                PreBuild(buildData);
 
                 BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
                 
@@ -89,6 +91,40 @@ namespace BuildsManager.Core
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
 
+        private static void BuildOne(BuildData buildData)
+        {
+            var targetBeforeStart = EditorUserBuildSettings.activeBuildTarget;
+            var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
+            var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
+            var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
+
+            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+
+            var buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
+                    buildData, GeneralBuildData.middlePath),
+                target = buildData.target,
+                options = buildData.options,
+            };
+            
+            PreBuild(buildData);
+
+            BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
+            
+            PostBuild(buildData);
+
+            if (buildData.isCompress)
+            {
+                BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate, buildData,
+                    GeneralBuildData.dirPathForPostProcess));
+            }
+
+            EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
+        }
+        
         private static void CompressAll()
         {
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
@@ -109,38 +145,6 @@ namespace BuildsManager.Core
 
                 Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
             }
-        }
-
-        private static void BuildOne(BuildData buildData)
-        {
-            var targetBeforeStart = EditorUserBuildSettings.activeBuildTarget;
-            var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
-            var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
-            var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
-
-            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
-
-            var buildPlayerOptions = new BuildPlayerOptions
-            {
-                scenes = scenes,
-                locationPathName = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
-                    buildData, GeneralBuildData.middlePath),
-                target = buildData.target,
-                options = buildData.options,
-            };
-
-            BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
-            
-            PostBuild(buildData);
-
-            if (buildData.isCompress)
-            {
-                BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate, buildData,
-                    GeneralBuildData.dirPathForPostProcess));
-            }
-
-            EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
 
         #region Base methods
@@ -196,6 +200,11 @@ namespace BuildsManager.Core
                 report += $"Error: {buildReport.SummarizeErrors()}";
                 Debug.LogError(report);
             }
+        }
+        
+        private static void PreBuild(BuildData buildData)
+        {
+            
         }
 
         private static void PostBuild(BuildData buildData)
