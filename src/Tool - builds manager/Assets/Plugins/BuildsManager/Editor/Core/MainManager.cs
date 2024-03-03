@@ -56,7 +56,7 @@ namespace BuildsManager.Core
             var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
             var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
             var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
-            
+
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
             {
                 var buildData = GeneralBuildData.builds[i];
@@ -79,11 +79,11 @@ namespace BuildsManager.Core
                     target = buildData.target,
                     options = buildData.options,
                 };
-                
+
                 PreBuild(buildData);
 
                 BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
-                
+
                 PostBuild(buildData);
             }
 
@@ -108,11 +108,11 @@ namespace BuildsManager.Core
                 target = buildData.target,
                 options = buildData.options,
             };
-            
+
             PreBuild(buildData);
 
             BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
-            
+
             PostBuild(buildData);
 
             if (buildData.isCompress)
@@ -124,7 +124,7 @@ namespace BuildsManager.Core
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
-        
+
         private static void CompressAll()
         {
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
@@ -201,16 +201,21 @@ namespace BuildsManager.Core
                 Debug.LogError(report);
             }
         }
-        
+
         private static void PreBuild(BuildData buildData)
         {
-            
+            var buildPath = buildData.buildPath;
+
+            if (!string.IsNullOrEmpty(buildPath))
+            {
+                DestroyBuildDirectory(buildPath);
+            }
         }
 
         private static void PostBuild(BuildData buildData)
         {
             var buildPath = buildData.buildPath;
-            
+
             if (GeneralBuildData.isReleaseBuild && !string.IsNullOrEmpty(buildPath))
             {
                 DestroyIL2CPPJunk(buildPath);
@@ -337,8 +342,25 @@ namespace BuildsManager.Core
             {
                 Directory.Delete(dir, true);
             }
+
             var pathToUnityCrashHandler = Path.Combine(buildRootPath, "UnityCrashHandler64.exe");
             File.Delete(pathToUnityCrashHandler);
+        }
+
+        private static void DestroyBuildDirectory(string buildPath)
+        {
+            if (Directory.Exists(buildPath))
+            {
+                Directory.Delete(buildPath, true);
+            }
+            else if (File.Exists(buildPath))
+            {
+                var dirs = Directory.GetParent(buildPath!)?.FullName;
+                if (dirs != null)
+                {
+                    Directory.Delete(dirs, true);
+                }
+            }
         }
 
         #endregion

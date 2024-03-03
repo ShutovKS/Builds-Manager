@@ -844,7 +844,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Android: 
     PS4: 
-    Standalone: 
+    Standalone: 1;2;3;1;2;3
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
