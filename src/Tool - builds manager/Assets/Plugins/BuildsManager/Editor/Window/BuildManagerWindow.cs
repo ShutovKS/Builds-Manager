@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using BuildsManager.Core;
 using BuildsManager.Data;
 using UnityEditor;
@@ -14,6 +16,7 @@ namespace BuildsManager.Window
 
         private static bool _globalDataFoldout = true;
         private static bool _buildsDataFoldout = true;
+        private static bool _showAddonsUsed = false;
 
         private static Vector2 _scrollPositionBuilds = Vector2.zero;
 
@@ -31,15 +34,15 @@ namespace BuildsManager.Window
             {
                 MainManager.LoadSettings();
             }
-            
+
             DrawGlobalBuildData();
-            
+
             DrawBuildDataList();
 
             DrawBuildsData();
 
             DrawBuildButtons();
-            
+
             EditorUtility.SetDirty(Settings);
         }
 
@@ -89,9 +92,9 @@ namespace BuildsManager.Window
             }
 
             EditorGUILayout.EndFoldoutHeaderGroup();
-            
+
             return;
-            
+
             static void DrawConfiguredBuilds()
             {
                 EditorGUILayout.BeginVertical();
@@ -124,18 +127,19 @@ namespace BuildsManager.Window
                 for (var i = 0; i < Settings.builds.Count; i++)
                 {
                     var settingsBuild = Settings.builds[i];
-                    
+
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.LabelField($"Build {settingsBuild.target}", EditorStyles.boldLabel);
 
                     settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
                     settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
                     settingsBuild.buildPath = EditorGUILayout.TextField("Build Path", settingsBuild.buildPath);
-                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
+                    settingsBuild.options =
+                        (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
-                    settingsBuild.targetGroup = (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
-
-                    // Можно добавить пользовательский интерфейс для настройки AddonsUsed
+                    settingsBuild.targetGroup =
+                        (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
+                    DrawAddonsUsed(ref settingsBuild);
 
                     if (GUILayout.Button("Remove", GUILayout.Width(80)))
                     {
@@ -153,6 +157,45 @@ namespace BuildsManager.Window
             if (GUILayout.Button("Add Build"))
             {
                 Settings.builds?.Add(new BuildData());
+            }
+
+            return;
+
+            static void DrawAddonsUsed(ref BuildData buildData)
+            {
+                if (Settings == null || Settings.addonsUsedData == null || Settings.addonsUsedData.addonsUsed == null)
+                {
+                    return;
+                }
+
+                _showAddonsUsed = EditorGUILayout.BeginFoldoutHeaderGroup(_showAddonsUsed, "Addons Used");
+
+                if (_showAddonsUsed)
+                {
+                    ++EditorGUI.indentLevel;
+
+                    var allAddonsUsed = Settings.addonsUsedData.addonsUsed;
+                    var selectedAddons = buildData.addonsUsed ?? new List<AddonUsed>(allAddonsUsed);
+
+                    foreach (var addonUsed in allAddonsUsed.Where(addonUsed =>
+                                 selectedAddons.All(x => x.name != addonUsed.name)))
+                    {
+                        selectedAddons.Add(addonUsed);
+                    }
+
+                    selectedAddons.RemoveAll(x => allAddonsUsed.All(y => y.name != x.name));
+
+                    foreach (var addonUsed in selectedAddons)
+                    {
+                        addonUsed.isUsed = EditorGUILayout.Toggle(addonUsed.name, addonUsed.isUsed);
+                    }
+
+                    buildData.addonsUsed = selectedAddons;
+
+                    --EditorGUI.indentLevel;
+                }
+
+                EditorGUILayout.EndFoldoutHeaderGroup();
             }
         }
 
@@ -176,12 +219,12 @@ namespace BuildsManager.Window
             }
 
             EditorGUILayout.EndHorizontal();
-            
+
             GUI.backgroundColor = prevColor;
-            
+
             EditorGUILayout.Space(5f);
         }
-        
+
         #endregion
 
         #region Callbacks

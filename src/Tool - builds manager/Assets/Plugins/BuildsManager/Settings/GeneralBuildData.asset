@@ -13,9 +13,23 @@ MonoBehaviour:
   m_Name: GeneralBuildData
   m_EditorClassIdentifier: 
   isReleaseBuild: 0
-  isNeedZip: 0
-  builds: []
-  addonsUsed: 0
+  builds:
+  - isEnabled: 1
+    isCompress: 0
+    buildPath: 
+    addonsUsed:
+    - isUsed: 1
+      name: YandexGame
+      defines:
+      - 1
+    - isUsed: 0
+      name: Yandex
+      defines:
+      - 1
+    options: 0
+    target: -2
+    targetGroup: 0
+  addonsUsedData: {fileID: 11400000, guid: 9b668bd4d2fee31499434e75a22ea616, type: 2}
   generalScriptingDefineSymbols: 
   outputRoot: Builds/
   middlePath: $NAME_$VERSION_$PLATFORM/$NAME_$VERSION/$NAME$EXECUTABLE
