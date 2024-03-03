@@ -30,7 +30,7 @@ namespace BuildsManager.Core
 
             var startTime = DateTime.Now;
             _usedDate = DateTime.Now;
-            
+
             BuildAll();
             CompressAll();
 
@@ -46,90 +46,64 @@ namespace BuildsManager.Core
 
         #region Loading Data
 
-        public static void LoadSettings()
+        public static GeneralBuildData LoadSettings()
         {
             const string SETTINGS_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/GeneralBuildData.asset";
             const string SETTINGS_PATH_KEY = "BuildManagerWindow.SettingsPath";
 
             var settingsPath = PlayerPrefs.GetString(SETTINGS_PATH_KEY, "");
+            GeneralBuildData = LoadAssetAtPath<GeneralBuildData>(settingsPath, SETTINGS_DEFAULT_PATH);
+            PlayerPrefs.SetString(SETTINGS_PATH_KEY, AssetDatabase.GetAssetPath(GeneralBuildData));
+            
+            GeneralBuildData.addonsUsedData = LoadAddonsUsedData();
 
-            if (!string.IsNullOrEmpty(settingsPath))
-            {
-                GeneralBuildData = AssetDatabase.LoadAssetAtPath<GeneralBuildData>(settingsPath);
-                if (GeneralBuildData == null)
-                {
-                    settingsPath = null;
-                }
-            }
-
-            if (string.IsNullOrEmpty(settingsPath))
-            {
-                var guids = AssetDatabase.FindAssets("t:GeneralBuildData", new[] { "Assets" });
-                if (guids.Length >= 2)
-                {
-                    Debug.LogError("2+ GeneralBuildData exist. Consider on using only 1 setting. " +
-                                   "The first one will be used.");
-                }
-
-                if (guids.Length != 0)
-                {
-                    settingsPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-                    PlayerPrefs.SetString(SETTINGS_PATH_KEY, settingsPath);
-                    GeneralBuildData = AssetDatabase.LoadAssetAtPath<GeneralBuildData>(settingsPath);
-                }
-            }
-
-            if (GeneralBuildData == null)
-            {
-                GeneralBuildData = (GeneralBuildData)ScriptableObject.CreateInstance(typeof(GeneralBuildData));
-                AssetDatabase.CreateAsset(GeneralBuildData, SETTINGS_DEFAULT_PATH);
-                PlayerPrefs.SetString(SETTINGS_PATH_KEY, SETTINGS_DEFAULT_PATH);
-            }
-
-            var addonsUsedData = LoadAddonsUsedData();
-            GeneralBuildData.addonsUsedData = addonsUsedData;
+            return GeneralBuildData;
         }
 
-        private static AddonsUsedData LoadAddonsUsedData()
+        public static AddonsUsedData LoadAddonsUsedData()
         {
             const string ADDONS_USED_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/AddonsUsedData.asset";
             const string ADDONS_USED_PATH_KEY = "BuildManagerWindow.AddonsUsedPath";
 
             var addonsUsedPath = PlayerPrefs.GetString(ADDONS_USED_PATH_KEY, "");
+            var addonsUsedData = LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
+            PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, AssetDatabase.GetAssetPath(addonsUsedData));
 
-            if (!string.IsNullOrEmpty(addonsUsedPath))
+
+            return LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
+        }
+
+        private static T LoadAssetAtPath<T>(string path, string defaultPath) where T : ScriptableObject
+        {
+            T asset = null;
+            if (!string.IsNullOrEmpty(path))
             {
-                var addonsUsedData = AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
-                if (addonsUsedData == null)
-                {
-                    addonsUsedPath = null;
-                }
+                asset = AssetDatabase.LoadAssetAtPath<T>(path);
+                if (asset == null) path = null;
             }
 
-            if (string.IsNullOrEmpty(addonsUsedPath))
+            if (string.IsNullOrEmpty(path))
             {
-                var guids = AssetDatabase.FindAssets("t:AddonsUsedData", new[] { "Assets" });
+                var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { "Assets" });
                 if (guids.Length >= 2)
-                {
-                    Debug.LogError("2+ AddonsUsedData exist. Consider on using only 1 setting. " +
-                                   "The first one will be used.");
-                }
+                    Debug.LogError(
+                        $"2+ {typeof(T).Name} exist. Consider using only 1 setting. The first one will be used.");
 
                 if (guids.Length != 0)
                 {
-                    addonsUsedPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-                    PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, addonsUsedPath);
+                    path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    asset = AssetDatabase.LoadAssetAtPath<T>(path);
                 }
             }
 
-            if (string.IsNullOrEmpty(addonsUsedPath))
+            if (string.IsNullOrEmpty(path))
             {
-                var addonsUsedData = (AddonsUsedData)ScriptableObject.CreateInstance(typeof(AddonsUsedData));
-                AssetDatabase.CreateAsset(addonsUsedData, ADDONS_USED_DEFAULT_PATH);
-                PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, ADDONS_USED_DEFAULT_PATH);
+                asset = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(asset, defaultPath);
+                path = defaultPath;
             }
 
-            return AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
+            return asset;
         }
 
         #endregion
@@ -173,7 +147,7 @@ namespace BuildsManager.Core
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
-        
+
         private static void CompressAll()
         {
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
