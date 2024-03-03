@@ -18,7 +18,6 @@ namespace BuildsManager.Core
         public static GeneralBuildData GeneralBuildData { get; private set; }
 
         private static DateTime _usedDate;
-        private static string _shownPath;
 
         public static void RunBuild(BuildData buildData = null)
         {
@@ -44,9 +43,9 @@ namespace BuildsManager.Core
             Debug.Log($@"End building all. Elapsed time: {(DateTime.Now - startTime).ToString()}");
 
 #if UNITY_EDITOR_WIN
-            if (string.IsNullOrEmpty(_shownPath) == false)
+            if (string.IsNullOrEmpty(GeneralBuildData.outputRoot) == false)
             {
-                Explorer.ShowExplorer(_shownPath);
+                Explorer.ShowExplorer(GeneralBuildData.outputRoot);
             }
 #endif
         }
@@ -57,9 +56,7 @@ namespace BuildsManager.Core
             var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
             var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
             var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
-
-            _shownPath = GeneralBuildData.outputRoot;
-
+            
             for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
             {
                 var buildData = GeneralBuildData.builds[i];
@@ -84,6 +81,8 @@ namespace BuildsManager.Core
                 };
 
                 BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
+                
+                PostBuild(buildData);
             }
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
@@ -131,6 +130,8 @@ namespace BuildsManager.Core
             };
 
             BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
+            
+            PostBuild(buildData);
 
             if (buildData.isCompress)
             {
@@ -194,6 +195,16 @@ namespace BuildsManager.Core
             {
                 report += $"Error: {buildReport.SummarizeErrors()}";
                 Debug.LogError(report);
+            }
+        }
+
+        private static void PostBuild(BuildData buildData)
+        {
+            var buildPath = buildData.buildPath;
+            
+            if (GeneralBuildData.isReleaseBuild && !string.IsNullOrEmpty(buildPath))
+            {
+                DestroyIL2CPPJunk(buildPath);
             }
         }
 
@@ -293,6 +304,8 @@ namespace BuildsManager.Core
 
         #endregion
 
+        #region Oth
+
         public static void OpenAddonsUsedData()
         {
             var path = AssetDatabase.GetAssetPath(GeneralBuildData.addonsUsedData);
@@ -305,5 +318,20 @@ namespace BuildsManager.Core
             EditorUtility.FocusProjectWindow();
             Selection.activeObject = GeneralBuildData.addonsUsedData;
         }
+
+        private static void DestroyIL2CPPJunk(string buildPath)
+        {
+            var buildRootPath = Path.GetDirectoryName(buildPath);
+            var dirs = Directory.GetDirectories(buildRootPath!);
+            var il2CPPDirs = dirs.Where(s => s.Contains("BackUpThisFolder_ButDontShipItWithYourGame"));
+            foreach (var dir in il2CPPDirs)
+            {
+                Directory.Delete(dir, true);
+            }
+            var pathToUnityCrashHandler = Path.Combine(buildRootPath, "UnityCrashHandler64.exe");
+            File.Delete(pathToUnityCrashHandler);
+        }
+
+        #endregion
     }
 }
