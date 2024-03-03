@@ -1,9 +1,9 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BuildsManager.Data;
-using BuildsManager.Tools;
+using BuildsManager.Utility;
 using Ionic.Zip;
 using UnityEditor;
 using UnityEditor.Build;
@@ -30,28 +30,9 @@ namespace BuildsManager.Core
 
             var startTime = DateTime.Now;
             _usedDate = DateTime.Now;
-
-
+            
             BuildAll();
-
-            for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
-            {
-                var buildData = GeneralBuildData.builds[i];
-
-                if (!buildData.isCompress || !buildData.isEnabled || buildData.targetGroup == BuildTargetGroup.Android)
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(buildData.buildPath))
-                {
-                    BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
-                        buildData, GeneralBuildData.dirPathForPostProcess));
-                    return;
-                }
-
-                Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
-            }
+            CompressAll();
 
             Debug.Log($@"End building all. Elapsed time: {(DateTime.Now - startTime).ToString()}");
 
@@ -104,6 +85,51 @@ namespace BuildsManager.Core
                 AssetDatabase.CreateAsset(GeneralBuildData, SETTINGS_DEFAULT_PATH);
                 PlayerPrefs.SetString(SETTINGS_PATH_KEY, SETTINGS_DEFAULT_PATH);
             }
+
+            var addonsUsedData = LoadAddonsUsedData();
+            GeneralBuildData.addonsUsedData = addonsUsedData;
+        }
+
+        private static AddonsUsedData LoadAddonsUsedData()
+        {
+            const string ADDONS_USED_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/AddonsUsedData.asset";
+            const string ADDONS_USED_PATH_KEY = "BuildManagerWindow.AddonsUsedPath";
+
+            var addonsUsedPath = PlayerPrefs.GetString(ADDONS_USED_PATH_KEY, "");
+
+            if (!string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var addonsUsedData = AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
+                if (addonsUsedData == null)
+                {
+                    addonsUsedPath = null;
+                }
+            }
+
+            if (string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var guids = AssetDatabase.FindAssets("t:AddonsUsedData", new[] { "Assets" });
+                if (guids.Length >= 2)
+                {
+                    Debug.LogError("2+ AddonsUsedData exist. Consider on using only 1 setting. " +
+                                   "The first one will be used.");
+                }
+
+                if (guids.Length != 0)
+                {
+                    addonsUsedPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, addonsUsedPath);
+                }
+            }
+
+            if (string.IsNullOrEmpty(addonsUsedPath))
+            {
+                var addonsUsedData = (AddonsUsedData)ScriptableObject.CreateInstance(typeof(AddonsUsedData));
+                AssetDatabase.CreateAsset(addonsUsedData, ADDONS_USED_DEFAULT_PATH);
+                PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, ADDONS_USED_DEFAULT_PATH);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<AddonsUsedData>(addonsUsedPath);
         }
 
         #endregion
@@ -129,86 +155,84 @@ namespace BuildsManager.Core
                 buildData.buildPath = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
                     buildData, GeneralBuildData.middlePath);
 
-                BaseBuild(
-                    buildData.targetGroup,
-                    buildData.target,
-                    buildData.options,
-                    buildData.buildPath,
-                    buildData.addonsUsed,
-                    GeneralBuildData.isReleaseBuild
-                );
+                var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path)
+                    .ToArray();
+
+                var buildPlayerOptions = new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = buildData.buildPath,
+                    targetGroup = buildData.targetGroup,
+                    target = buildData.target,
+                    options = buildData.options,
+                };
+
+                BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
             }
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
+        
+        private static void CompressAll()
+        {
+            for (byte i = 0; i < GeneralBuildData.builds.Count; ++i)
+            {
+                var buildData = GeneralBuildData.builds[i];
+
+                if (!buildData.isCompress || !buildData.isEnabled || buildData.targetGroup == BuildTargetGroup.Android)
+                {
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(buildData.buildPath))
+                {
+                    BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
+                        buildData, GeneralBuildData.dirPathForPostProcess));
+                    return;
+                }
+
+                Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
+            }
+        }
 
         #region Base methods
 
-        private static void BaseBuild(BuildTargetGroup buildTargetGroup, BuildTarget buildTarget,
-            BuildOptions buildOptions, string buildPath, AddonsUsedType addonsUsedType, bool isReleaseBuild)
+        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, IEnumerable<AddonUsed> addonsUsed,
+            bool isReleaseBuild)
         {
-            if (buildTargetGroup == BuildTargetGroup.Android
-                && PlayerSettings.Android.useCustomKeystore
-                && string.IsNullOrEmpty(PlayerSettings.Android.keyaliasPass))
+            var targetGroup = buildPlayerOptions.targetGroup;
+
+            if (targetGroup == BuildTargetGroup.Android && PlayerSettings.Android.useCustomKeystore &&
+                string.IsNullOrEmpty(PlayerSettings.Android.keyaliasPass))
             {
                 PlayerSettings.Android.keyaliasPass = PlayerSettings.Android.keystorePass = "keystore";
             }
 
-            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+            var namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
+            EditorUserBuildSettings.SwitchActiveBuildTarget(namedBuildTarget, buildPlayerOptions.target);
 
-            switch (buildTargetGroup, isReleaseBuild)
+            var implementation = isReleaseBuild ? ScriptingImplementation.IL2CPP : ScriptingImplementation.Mono2x;
+            PlayerSettings.SetScriptingBackend(namedBuildTarget, implementation);
+
+            var configuration = isReleaseBuild ? Il2CppCompilerConfiguration.Master : Il2CppCompilerConfiguration.Debug;
+            PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, configuration);
+
+            if (targetGroup == BuildTargetGroup.Android)
             {
-                case (BuildTargetGroup.Standalone, true):
-                    buildOptions |= BuildOptions.CompressWithLz4;
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    break;
-                case (BuildTargetGroup.Standalone, false):
-                    buildOptions &= ~(BuildOptions.CompressWithLz4 | BuildOptions.CompressWithLz4HC);
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    break;
-
-                case (BuildTargetGroup.Android, true):
-                    buildOptions |= BuildOptions.CompressWithLz4;
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.IL2CPP);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
-                    break;
-                case (BuildTargetGroup.Android, false):
-                    buildOptions &= ~(BuildOptions.CompressWithLz4 | BuildOptions.CompressWithLz4HC);
-                    PlayerSettings.SetScriptingBackend(namedBuildTarget, ScriptingImplementation.Mono2x);
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
-                    break;
-
-                case (BuildTargetGroup.WebGL, true):
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Master);
-                    break;
-                case (BuildTargetGroup.WebGL, false):
-                    PlayerSettings.SetIl2CppCompilerConfiguration(namedBuildTarget, Il2CppCompilerConfiguration.Debug);
-                    break;
+                PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64 | AndroidArchitecture.ARMv7;
             }
 
-            var buildPlayerOptions = new BuildPlayerOptions
-            {
-                scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray(),
-                locationPathName = buildPath,
-                targetGroup = buildTargetGroup,
-                target = buildTarget,
-                options = buildOptions,
-            };
+            var preBuildDefines = GeneralBuildData.generalScriptingDefineSymbols;
+            var buildDefines = addonsUsed.Aggregate(preBuildDefines,
+                (current, addonUsed) => current + ";" + string.Join(";", addonUsed.defines));
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, buildDefines);
 
-            var scriptingDefineSymbolsOld = GeneralBuildData.generalScriptingDefineSymbols;
-            var scriptingDefineSymbols =
-                scriptingDefineSymbolsOld + ";" + AddonsUsed.GetScriptingDefineSymbols(addonsUsedType);
-
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, scriptingDefineSymbols);
+            AssetDatabase.Refresh();
 
             var buildReport = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
-            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, scriptingDefineSymbolsOld);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, preBuildDefines);
 
             var summary = buildReport!.summary;
 
@@ -258,5 +282,18 @@ namespace BuildsManager.Core
         }
 
         #endregion
+
+        public static void OpenAddonsUsedData()
+        {
+            var path = AssetDatabase.GetAssetPath(GeneralBuildData.addonsUsedData);
+            if (string.IsNullOrEmpty(path))
+            {
+                Debug.LogError("Can't find AddonsUsedData");
+                return;
+            }
+
+            EditorUtility.FocusProjectWindow();
+            Selection.activeObject = GeneralBuildData.addonsUsedData;
+        }
     }
 }

@@ -1,8 +1,9 @@
 using System;
+using System.Linq;
 using BuildsManager.Data;
 using UnityEditor;
 
-namespace BuildsManager.Tools
+namespace BuildsManager.Utility
 {
     public static class ConvertToStrings
     {
@@ -18,6 +19,7 @@ namespace BuildsManager.Tools
             s = s.Replace("$MONTH", $"{usedDate.Date.Month}");
             s = s.Replace("$DAY", $"{usedDate.Date.Day}");
             s = s.Replace("$TIME", $"{usedDate.Hour}_{usedDate.Minute}");
+            s = s.Replace("$ADDONS", $"{data.addonsUsed.Aggregate("", (current, addonUsed) => current + addonUsed.name + " ")}");
             s = s.Replace("$EXECUTABLE", GetBuildTargetExecutable(data.target));
             return s;
         }
@@ -34,6 +36,7 @@ namespace BuildsManager.Tools
             s = s.Replace("$MONTH", $"{usedDate.Date.Month}");
             s = s.Replace("$DAY", $"{usedDate.Date.Day}");
             s = s.Replace("$TIME", $"{usedDate.Hour}_{usedDate.Minute}");
+            s = s.Replace("$ADDONS", $"{data.addonsUsed.Aggregate("", (current, addonUsed) => current + addonUsed.name + " ")}");
             s = s.Contains("$EXECUTABLE")
                 ? s.Replace("$EXECUTABLE", GetBuildTargetExecutable(data.target))
                 : s + ".zip";

@@ -1,6 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
 using BuildsManager.Core;
 using BuildsManager.Data;
-using BuildsManager.Window.DrawTools;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -15,17 +16,14 @@ namespace BuildsManager.Window
 
         private static bool _globalDataFoldout = true;
         private static bool _buildsDataFoldout = true;
+        private static bool _showAddonsUsed = false;
 
-        private static Vector2 _scrollPosSequence = Vector2.zero;
-
-        private static ReorderableList _buildList;
+        private static Vector2 _scrollPositionBuilds = Vector2.zero;
 
         [MenuItem("File/Builds Manager", false, 205)]
         public static void ShowWindow()
         {
-            _buildList = null;
-
-            GetWindow(typeof(BuildManagerWindow), false, "Builds Manager", true);
+            GetWindow<BuildManagerWindow>(false, "Builds Manager", true);
 
             MainManager.LoadSettings();
         }
@@ -37,23 +35,49 @@ namespace BuildsManager.Window
                 MainManager.LoadSettings();
             }
 
+            DrawGlobalBuildData();
+
+            DrawBuildDataList();
+
+            DrawBuildsData();
+
+            DrawBuildButtons();
+
+            EditorUtility.SetDirty(Settings);
+        }
+
+        #region Main Drawers
+
+        private static void DrawGlobalBuildData()
+        {
             _globalDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_globalDataFoldout, "Глобальные данные");
 
             if (_globalDataFoldout)
             {
                 ++EditorGUI.indentLevel;
 
-                DrawGlobalBuildData();
+                PlayerSettings.companyName = EditorGUILayout.TextField("Название компании", PlayerSettings.companyName);
+                PlayerSettings.productName = EditorGUILayout.TextField("Название проекта", PlayerSettings.productName);
+                PlayerSettings.bundleVersion = EditorGUILayout.TextField("Версия", PlayerSettings.bundleVersion);
+
+                EditorGUILayout.Space(5);
+
+                EditorGUILayout.LabelField("Для Android");
+                PlayerSettings.Android.bundleVersionCode = EditorGUILayout.IntField("Версия пакета Android",
+                    PlayerSettings.Android.bundleVersionCode);
+                PlayerSettings.Android.keystorePass =
+                    EditorGUILayout.TextField("Android keystore pass", PlayerSettings.Android.keystorePass);
+                PlayerSettings.Android.keyaliasPass =
+                    EditorGUILayout.TextField("Android keyalias pass", PlayerSettings.Android.keyaliasPass);
 
                 --EditorGUI.indentLevel;
             }
 
             EditorGUILayout.EndFoldoutHeaderGroup();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        }
 
-            DrawSelectedSequenceData();
-
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        private static void DrawBuildsData()
+        {
             _buildsDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_buildsDataFoldout, "Данные билда");
 
             if (_buildsDataFoldout)
@@ -69,30 +93,108 @@ namespace BuildsManager.Window
 
             EditorGUILayout.EndFoldoutHeaderGroup();
 
-            DrawBuildButtons();
+            return;
 
-            EditorGUILayout.Space(5f);
+            static void DrawConfiguredBuilds()
+            {
+                EditorGUILayout.BeginVertical();
 
-            EditorUtility.SetDirty(Settings);
+                Settings.generalScriptingDefineSymbols = EditorGUILayout.TextField("Scripting Define Symbols Default",
+                    Settings.generalScriptingDefineSymbols);
+                Settings.isReleaseBuild = EditorGUILayout.Toggle("Is Release build", Settings.isReleaseBuild);
+
+                EditorGUILayout.EndVertical();
+            }
+
+            static void DrawPathData()
+            {
+                Settings.outputRoot = EditorGUILayout.TextField("Output root", Settings.outputRoot);
+                Settings.middlePath = EditorGUILayout.TextField("Middle path", Settings.middlePath);
+                Settings.dirPathForPostProcess =
+                    EditorGUILayout.TextField("Dir path for process", Settings.dirPathForPostProcess);
+            }
         }
 
-        #region Main Drawers
-
-        private void DrawGlobalBuildData()
+        private static void DrawBuildDataList()
         {
-            PlayerSettings.companyName = EditorGUILayout.TextField("Название компании", PlayerSettings.companyName);
-            PlayerSettings.productName = EditorGUILayout.TextField("Название проекта", PlayerSettings.productName);
-            PlayerSettings.bundleVersion = EditorGUILayout.TextField("Версия", PlayerSettings.bundleVersion);
+            GUILayout.Label("Build Data List", EditorStyles.boldLabel);
 
-            EditorGUILayout.Space(5);
+            _scrollPositionBuilds = EditorGUILayout.BeginScrollView(_scrollPositionBuilds);
+            EditorGUILayout.BeginHorizontal(GUILayout.Width(Settings.builds.Count * 250));
 
-            EditorGUILayout.LabelField("Для Android");
-            PlayerSettings.Android.bundleVersionCode = EditorGUILayout.IntField("Версия пакета Android",
-                PlayerSettings.Android.bundleVersionCode);
-            PlayerSettings.Android.keystorePass =
-                EditorGUILayout.TextField("Android keystore pass", PlayerSettings.Android.keystorePass);
-            PlayerSettings.Android.keyaliasPass =
-                EditorGUILayout.TextField("Android keyalias pass", PlayerSettings.Android.keyaliasPass);
+            if (Settings != null && Settings.builds != null)
+            {
+                for (var i = 0; i < Settings.builds.Count; i++)
+                {
+                    var settingsBuild = Settings.builds[i];
+
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.LabelField($"Build {settingsBuild.target}", EditorStyles.boldLabel);
+
+                    settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
+                    settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
+                    settingsBuild.buildPath = EditorGUILayout.TextField("Build Path", settingsBuild.buildPath);
+                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
+                    settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
+                    settingsBuild.targetGroup = (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
+                    DrawAddonsUsed(ref settingsBuild);
+
+                    if (GUILayout.Button("Remove", GUILayout.Width(80)))
+                    {
+                        Settings.builds.RemoveAt(i);
+                        break;
+                    }
+
+                    EditorGUILayout.EndVertical();
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndScrollView();
+
+            if (GUILayout.Button("Add Build"))
+            {
+                Settings.builds?.Add(new BuildData());
+            }
+
+            return;
+
+            static void DrawAddonsUsed(ref BuildData buildData)
+            {
+                if (Settings == null || Settings.addonsUsedData == null || Settings.addonsUsedData.addonsUsed == null)
+                {
+                    return;
+                }
+
+                _showAddonsUsed = EditorGUILayout.BeginFoldoutHeaderGroup(_showAddonsUsed, "Addons Used");
+
+                if (_showAddonsUsed)
+                {
+                    ++EditorGUI.indentLevel;
+
+                    var allAddonsUsed = Settings.addonsUsedData.addonsUsed;
+                    var selectedAddons = buildData.addonsUsed ?? new List<AddonUsed>(allAddonsUsed);
+
+                    foreach (var addonUsed in allAddonsUsed.Where(addonUsed =>
+                                 selectedAddons.All(x => x.name != addonUsed.name)))
+                    {
+                        selectedAddons.Add(addonUsed);
+                    }
+
+                    selectedAddons.RemoveAll(x => allAddonsUsed.All(y => y.name != x.name));
+
+                    foreach (var addonUsed in selectedAddons)
+                    {
+                        addonUsed.isUsed = EditorGUILayout.ToggleLeft(addonUsed.name, addonUsed.isUsed);
+                    }
+
+                    buildData.addonsUsed = selectedAddons;
+
+                    --EditorGUI.indentLevel;
+                }
+
+                EditorGUILayout.EndFoldoutHeaderGroup();
+            }
         }
 
         private static void DrawBuildButtons()
@@ -104,52 +206,21 @@ namespace BuildsManager.Window
 
             EditorGUILayout.BeginHorizontal();
 
-            EditorGUILayout.Space(2.5f);
+            if (GUILayout.Button($"Open AddonsUsed Data", GUILayout.Height(20f)))
+            {
+                MainManager.OpenAddonsUsedData();
+            }
 
             if (GUILayout.Button($"Build All", GUILayout.Height(20f)))
             {
                 MainManager.RunBuild();
             }
 
-            EditorGUILayout.Space(2.5f);
-
             EditorGUILayout.EndHorizontal();
 
             GUI.backgroundColor = prevColor;
-        }
 
-        private static void DrawSelectedSequenceData()
-        {
-            _scrollPosSequence = EditorGUILayout.BeginScrollView(_scrollPosSequence);
-
-            if (_buildList == null)
-            {
-                _buildList = BuildDataReordableList.Create(Settings.builds, OnBuildAdd, "Builds");
-                _buildList.onSelectCallback += OnBuildSelectionChanged;
-                _buildList.index = 0;
-            }
-
-            _buildList.DoLayoutList();
-
-            EditorGUILayout.EndScrollView();
-        }
-
-        private static void DrawConfiguredBuilds()
-        {
-            EditorGUILayout.BeginVertical();
-            
-            Settings.generalScriptingDefineSymbols = EditorGUILayout.TextField("Scripting Define Symbols Default", Settings.generalScriptingDefineSymbols);
-            Settings.isNeedZip = EditorGUILayout.Toggle("Need zip", Settings.isNeedZip);
-            Settings.isReleaseBuild = EditorGUILayout.Toggle("Is Release build", Settings.isReleaseBuild);
-
-            EditorGUILayout.EndVertical();
-        }
-
-        private static void DrawPathData()
-        {
-            Settings.outputRoot = EditorGUILayout.TextField("Output root", Settings.outputRoot);
-            Settings.middlePath = EditorGUILayout.TextField("Middle path", Settings.middlePath);
-            Settings.dirPathForPostProcess = EditorGUILayout.TextField("Dir path for process", Settings.dirPathForPostProcess);
+            EditorGUILayout.Space(5f);
         }
 
         #endregion

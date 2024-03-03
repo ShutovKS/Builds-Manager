@@ -1,10 +1,21 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using UnityEngine;
 
 namespace BuildsManager.Data
 {
-    [Flags]
-    public enum AddonsUsedType
+    [Serializable]
+    public class AddonsUsedData : ScriptableObject
     {
-        None,
+        public List<AddonUsed> addonsUsed;
+    }
+    
+    [Serializable]
+    public class AddonUsed
+    {
+        public bool isUsed;
+        public string name;
+        public string[] defines;
     }
 }

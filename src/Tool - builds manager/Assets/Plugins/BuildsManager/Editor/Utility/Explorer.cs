@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using UnityEditor;
 
-namespace BuildsManager.Tools
+namespace BuildsManager.Utility
 {
     public static class Explorer
     {
