@@ -16,7 +16,7 @@ MonoBehaviour:
   builds:
   - isEnabled: 1
     isCompress: 0
-    buildPath: 
+    buildPath: Builds/Tool_-_builds_manager_0.1_Windows64/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
     addonsUsed:
     - isUsed: 0
       name: YandexGame
@@ -31,8 +31,19 @@ MonoBehaviour:
       - 2
       - 3
     options: 0
-    target: -2
-    targetGroup: 0
+    target: 19
+  - isEnabled: 1
+    isCompress: 0
+    buildPath: Builds/Tool_-_builds_manager_0.1_Android/Tool_-_builds_manager_0.1/Tool_-_builds_manager.apk
+    addonsUsed: []
+    options: 0
+    target: 13
+  - isEnabled: 1
+    isCompress: 0
+    buildPath: Builds/Tool_-_builds_manager_0.1_Windows32/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
+    addonsUsed: []
+    options: 0
+    target: 5
   addonsUsedData: {fileID: 11400000, guid: 9b668bd4d2fee31499434e75a22ea616, type: 2}
   generalScriptingDefineSymbols: 
   outputRoot: Builds/

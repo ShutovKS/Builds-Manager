@@ -15,7 +15,6 @@ namespace BuildsManager.Data
         public List<AddonUsed> addonsUsed;
         public BuildOptions options = BuildOptions.None;
         public BuildTarget target = BuildTarget.NoTarget;
-        public BuildTargetGroup targetGroup = BuildTargetGroup.Unknown;
 
         public object Clone()
         {

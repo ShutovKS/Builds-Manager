@@ -136,7 +136,6 @@ namespace BuildsManager.Core
                 {
                     scenes = scenes,
                     locationPathName = buildData.buildPath,
-                    targetGroup = buildData.targetGroup,
                     target = buildData.target,
                     options = buildData.options,
                 };
@@ -154,7 +153,7 @@ namespace BuildsManager.Core
             {
                 var buildData = GeneralBuildData.builds[i];
 
-                if (!buildData.isCompress || !buildData.isEnabled || buildData.targetGroup == BuildTargetGroup.Android)
+                if (!buildData.isCompress || !buildData.isEnabled || buildData.target == BuildTarget.Android)
                 {
                     continue;
                 }
@@ -175,9 +174,9 @@ namespace BuildsManager.Core
         private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, IEnumerable<AddonUsed> addonsUsed,
             bool isReleaseBuild)
         {
-            var targetGroup = buildPlayerOptions.targetGroup;
+            var targetGroup = buildPlayerOptions.target.ToBuildTargetGroup();
 
-            if (targetGroup == BuildTargetGroup.Android && PlayerSettings.Android.useCustomKeystore &&
+            if (buildPlayerOptions.target == BuildTarget.Android && PlayerSettings.Android.useCustomKeystore &&
                 string.IsNullOrEmpty(PlayerSettings.Android.keyaliasPass))
             {
                 PlayerSettings.Android.keyaliasPass = PlayerSettings.Android.keystorePass = "keystore";
