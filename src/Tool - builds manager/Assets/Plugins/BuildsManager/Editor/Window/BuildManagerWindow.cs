@@ -134,11 +134,9 @@ namespace BuildsManager.Window
                     settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
                     settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
                     settingsBuild.buildPath = EditorGUILayout.TextField("Build Path", settingsBuild.buildPath);
-                    settingsBuild.options =
-                        (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
+                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
-                    settingsBuild.targetGroup =
-                        (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
+                    settingsBuild.targetGroup = (BuildTargetGroup)EditorGUILayout.EnumPopup("Target Group", settingsBuild.targetGroup);
                     DrawAddonsUsed(ref settingsBuild);
 
                     if (GUILayout.Button("Remove", GUILayout.Width(80)))
@@ -187,7 +185,7 @@ namespace BuildsManager.Window
 
                     foreach (var addonUsed in selectedAddons)
                     {
-                        addonUsed.isUsed = EditorGUILayout.Toggle(addonUsed.name, addonUsed.isUsed);
+                        addonUsed.isUsed = EditorGUILayout.ToggleLeft(addonUsed.name, addonUsed.isUsed);
                     }
 
                     buildData.addonsUsed = selectedAddons;

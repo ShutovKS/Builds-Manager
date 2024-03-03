@@ -18,14 +18,18 @@ MonoBehaviour:
     isCompress: 0
     buildPath: 
     addonsUsed:
-    - isUsed: 1
+    - isUsed: 0
       name: YandexGame
       defines:
       - 1
-    - isUsed: 0
+      - 2
+      - 3
+    - isUsed: 1
       name: Yandex
       defines:
       - 1
+      - 2
+      - 3
     options: 0
     target: -2
     targetGroup: 0

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BuildsManager.Data;
@@ -283,5 +282,18 @@ namespace BuildsManager.Core
         }
 
         #endregion
+
+        public static void OpenAddonsUsedData()
+        {
+            var path = AssetDatabase.GetAssetPath(GeneralBuildData.addonsUsedData);
+            if (string.IsNullOrEmpty(path))
+            {
+                Debug.LogError("Can't find AddonsUsedData");
+                return;
+            }
+
+            EditorUtility.FocusProjectWindow();
+            Selection.activeObject = GeneralBuildData.addonsUsedData;
+        }
     }
 }
