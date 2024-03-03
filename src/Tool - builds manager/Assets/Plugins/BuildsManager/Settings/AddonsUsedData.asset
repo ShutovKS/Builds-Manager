@@ -12,14 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cde2bbb25a0e415a9dbdc33eacfa3717, type: 3}
   m_Name: AddonsUsedData
   m_EditorClassIdentifier: 
-  addonsUsed:
-  - name: YandexGame
-    defines:
-    - 1
-    - 2
-    - 3
-  - name: Yandex
-    defines:
-    - 1
-    - 2
-    - 3
+  addonsUsed: []

@@ -12,62 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd64825da9934520a1f6d6df79b5f006, type: 3}
   m_Name: GeneralBuildData
   m_EditorClassIdentifier: 
-  isReleaseBuild: 1
+  isReleaseBuild: 0
   builds:
   - isEnabled: 1
-    isCompress: 0
+    isCompress: 1
     buildPath: Builds/Tool_-_builds_manager_0.1_Windows64/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
-    addonsUsed:
-    - isUsed: 0
-      name: YandexGame
-      defines:
-      - 1
-      - 2
-      - 3
-    - isUsed: 1
-      name: Yandex
-      defines:
-      - 1
-      - 2
-      - 3
+    addonsUsed: []
     options: 0
     target: 19
-  - isEnabled: 0
+  - isEnabled: 1
     isCompress: 0
     buildPath: Builds/Tool_-_builds_manager_0.1_Android/Tool_-_builds_manager_0.1/Tool_-_builds_manager.apk
-    addonsUsed:
-    - isUsed: 0
-      name: YandexGame
-      defines:
-      - 1
-      - 2
-      - 3
-    - isUsed: 0
-      name: Yandex
-      defines:
-      - 1
-      - 2
-      - 3
+    addonsUsed: []
     options: 0
     target: 13
-  - isEnabled: 0
+  - isEnabled: 1
     isCompress: 1
-    buildPath: Builds/Tool_-_builds_manager_0.1_Windows32/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
-    addonsUsed:
-    - isUsed: 1
-      name: YandexGame
-      defines:
-      - 1
-      - 2
-      - 3
-    - isUsed: 1
-      name: Yandex
-      defines:
-      - 1
-      - 2
-      - 3
+    buildPath: Builds/Tool_-_builds_manager_0.1_WebGL/Tool_-_builds_manager_0.1/Tool_-_builds_manager
+    addonsUsed: []
     options: 0
-    target: 5
+    target: 20
+  - isEnabled: 1
+    isCompress: 0
+    buildPath: Builds/Tool_-_builds_manager_0.1_Linux/Tool_-_builds_manager_0.1/Tool_-_builds_managerx86_64
+    addonsUsed: []
+    options: 0
+    target: 24
   addonsUsedData: {fileID: 11400000, guid: 9b668bd4d2fee31499434e75a22ea616, type: 2}
   generalScriptingDefineSymbols: 
   outputRoot: Builds/
