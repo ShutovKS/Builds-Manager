@@ -129,13 +129,20 @@ namespace BuildsManager.Window
                     var settingsBuild = Settings.builds[i];
 
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField($"Build {settingsBuild.target}", EditorStyles.boldLabel);
 
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.LabelField($"{settingsBuild.target}", EditorStyles.boldLabel);
+                    GUILayout.FlexibleSpace();
+                    EditorGUILayout.EndHorizontal();
+
+                    EditorGUILayout.BeginHorizontal();
                     settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
                     settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
+                    EditorGUILayout.EndHorizontal();
+                    
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
-                    settingsBuild.options =
-                        (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
+                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     DrawAddonsUsed(ref settingsBuild);
 
                     EditorGUILayout.BeginHorizontal();
