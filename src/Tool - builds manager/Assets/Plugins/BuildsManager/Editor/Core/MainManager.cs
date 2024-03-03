@@ -20,7 +20,7 @@ namespace BuildsManager.Core
         private static DateTime _usedDate;
         private static string _shownPath;
 
-        public static void RunBuild()
+        public static void RunBuild(BuildData buildData = null)
         {
             if (GeneralBuildData == null || GeneralBuildData.builds.Count == 0)
             {
@@ -31,8 +31,15 @@ namespace BuildsManager.Core
             var startTime = DateTime.Now;
             _usedDate = DateTime.Now;
 
-            BuildAll();
-            CompressAll();
+            if (buildData == null)
+            {
+                BuildAll();
+                CompressAll();
+            }
+            else
+            {
+                BuildOne(buildData);
+            }
 
             Debug.Log($@"End building all. Elapsed time: {(DateTime.Now - startTime).ToString()}");
 
@@ -43,70 +50,6 @@ namespace BuildsManager.Core
             }
 #endif
         }
-
-        #region Loading Data
-
-        public static GeneralBuildData LoadSettings()
-        {
-            const string SETTINGS_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/GeneralBuildData.asset";
-            const string SETTINGS_PATH_KEY = "BuildManagerWindow.SettingsPath";
-
-            var settingsPath = PlayerPrefs.GetString(SETTINGS_PATH_KEY, "");
-            GeneralBuildData = LoadAssetAtPath<GeneralBuildData>(settingsPath, SETTINGS_DEFAULT_PATH);
-            PlayerPrefs.SetString(SETTINGS_PATH_KEY, AssetDatabase.GetAssetPath(GeneralBuildData));
-            
-            GeneralBuildData.addonsUsedData = LoadAddonsUsedData();
-
-            return GeneralBuildData;
-        }
-
-        public static AddonsUsedData LoadAddonsUsedData()
-        {
-            const string ADDONS_USED_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/AddonsUsedData.asset";
-            const string ADDONS_USED_PATH_KEY = "BuildManagerWindow.AddonsUsedPath";
-
-            var addonsUsedPath = PlayerPrefs.GetString(ADDONS_USED_PATH_KEY, "");
-            var addonsUsedData = LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
-            PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, AssetDatabase.GetAssetPath(addonsUsedData));
-
-
-            return LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
-        }
-
-        private static T LoadAssetAtPath<T>(string path, string defaultPath) where T : ScriptableObject
-        {
-            T asset = null;
-            if (!string.IsNullOrEmpty(path))
-            {
-                asset = AssetDatabase.LoadAssetAtPath<T>(path);
-                if (asset == null) path = null;
-            }
-
-            if (string.IsNullOrEmpty(path))
-            {
-                var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { "Assets" });
-                if (guids.Length >= 2)
-                    Debug.LogError(
-                        $"2+ {typeof(T).Name} exist. Consider using only 1 setting. The first one will be used.");
-
-                if (guids.Length != 0)
-                {
-                    path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                    asset = AssetDatabase.LoadAssetAtPath<T>(path);
-                }
-            }
-
-            if (string.IsNullOrEmpty(path))
-            {
-                asset = ScriptableObject.CreateInstance<T>();
-                AssetDatabase.CreateAsset(asset, defaultPath);
-                path = defaultPath;
-            }
-
-            return asset;
-        }
-
-        #endregion
 
         private static void BuildAll()
         {
@@ -167,6 +110,36 @@ namespace BuildsManager.Core
 
                 Debug.LogWarning("Can't find build for " + ConvertToStrings.GetBuildTargetExecutable(buildData.target));
             }
+        }
+
+        private static void BuildOne(BuildData buildData)
+        {
+            var targetBeforeStart = EditorUserBuildSettings.activeBuildTarget;
+            var targetGroupBeforeStart = EditorUserBuildSettings.selectedBuildTargetGroup;
+            var namedBuildTargetStart = NamedBuildTarget.FromBuildTargetGroup(targetGroupBeforeStart);
+            var definesBeforeStart = PlayerSettings.GetScriptingDefineSymbols(namedBuildTargetStart);
+
+            var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+
+            var buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = scenes,
+                locationPathName = GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate,
+                    buildData, GeneralBuildData.middlePath),
+                target = buildData.target,
+                options = buildData.options,
+            };
+
+            BaseBuild(buildPlayerOptions, buildData.addonsUsed, GeneralBuildData.isReleaseBuild);
+
+            if (buildData.isCompress)
+            {
+                BaseCompress(GeneralBuildData.outputRoot + ConvertToStrings.GetPathWithVars(_usedDate, buildData,
+                    GeneralBuildData.dirPathForPostProcess));
+            }
+
+            EditorUserBuildSettings.SwitchActiveBuildTarget(targetGroupBeforeStart, targetBeforeStart);
+            PlayerSettings.SetScriptingDefineSymbols(namedBuildTargetStart, definesBeforeStart);
         }
 
         #region Base methods
@@ -252,6 +225,70 @@ namespace BuildsManager.Core
             Debug.Log($"Make {dirPath}.zip.  \t " +
                       $"Time: {(DateTime.Now - startTime).ToString()}  \t " +
                       $"Size: {uncompressedSize / 1048576} Mb - {compressedSize / 1048576} Mb");
+        }
+
+        #endregion
+
+        #region Loading Data
+
+        public static GeneralBuildData LoadSettings()
+        {
+            const string SETTINGS_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/GeneralBuildData.asset";
+            const string SETTINGS_PATH_KEY = "BuildManagerWindow.SettingsPath";
+
+            var settingsPath = PlayerPrefs.GetString(SETTINGS_PATH_KEY, "");
+            GeneralBuildData = LoadAssetAtPath<GeneralBuildData>(settingsPath, SETTINGS_DEFAULT_PATH);
+            PlayerPrefs.SetString(SETTINGS_PATH_KEY, AssetDatabase.GetAssetPath(GeneralBuildData));
+
+            GeneralBuildData.addonsUsedData = LoadAddonsUsedData();
+
+            return GeneralBuildData;
+        }
+
+        public static AddonsUsedData LoadAddonsUsedData()
+        {
+            const string ADDONS_USED_DEFAULT_PATH = "Assets/Plugins/BuildsManager/Settings/AddonsUsedData.asset";
+            const string ADDONS_USED_PATH_KEY = "BuildManagerWindow.AddonsUsedPath";
+
+            var addonsUsedPath = PlayerPrefs.GetString(ADDONS_USED_PATH_KEY, "");
+            var addonsUsedData = LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
+            PlayerPrefs.SetString(ADDONS_USED_PATH_KEY, AssetDatabase.GetAssetPath(addonsUsedData));
+
+
+            return LoadAssetAtPath<AddonsUsedData>(addonsUsedPath, ADDONS_USED_DEFAULT_PATH);
+        }
+
+        private static T LoadAssetAtPath<T>(string path, string defaultPath) where T : ScriptableObject
+        {
+            T asset = null;
+            if (!string.IsNullOrEmpty(path))
+            {
+                asset = AssetDatabase.LoadAssetAtPath<T>(path);
+                if (asset == null) path = null;
+            }
+
+            if (string.IsNullOrEmpty(path))
+            {
+                var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { "Assets" });
+                if (guids.Length >= 2)
+                    Debug.LogError(
+                        $"2+ {typeof(T).Name} exist. Consider using only 1 setting. The first one will be used.");
+
+                if (guids.Length != 0)
+                {
+                    path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    asset = AssetDatabase.LoadAssetAtPath<T>(path);
+                }
+            }
+
+            if (string.IsNullOrEmpty(path))
+            {
+                asset = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(asset, defaultPath);
+                path = defaultPath;
+            }
+
+            return asset;
         }
 
         #endregion

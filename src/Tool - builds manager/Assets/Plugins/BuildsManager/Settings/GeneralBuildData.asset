@@ -32,14 +32,14 @@ MonoBehaviour:
       - 3
     options: 0
     target: 19
-  - isEnabled: 1
+  - isEnabled: 0
     isCompress: 0
     buildPath: Builds/Tool_-_builds_manager_0.1_Android/Tool_-_builds_manager_0.1/Tool_-_builds_manager.apk
     addonsUsed: []
     options: 0
     target: 13
   - isEnabled: 1
-    isCompress: 0
+    isCompress: 1
     buildPath: Builds/Tool_-_builds_manager_0.1_Windows32/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
     addonsUsed: []
     options: 0

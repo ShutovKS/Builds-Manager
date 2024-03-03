@@ -843,6 +843,7 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   scriptingDefineSymbols:
     Android: 
+    PS4: 
     Standalone: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
