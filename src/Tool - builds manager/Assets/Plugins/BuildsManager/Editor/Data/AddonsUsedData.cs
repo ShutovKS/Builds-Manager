@@ -67,6 +67,12 @@ namespace BuildsManager.Data
     [Serializable]
     public struct AddonUsedDetailed : IAddonUsed
     {
+        public AddonUsedDetailed(string name)
+        {
+            Name = name;
+            Defines = Array.Empty<string>();
+        }
+
         [field: SerializeField] public string Name { get; set; }
         [field: SerializeField] public string[] Defines { get; set; }
     }
@@ -74,8 +80,14 @@ namespace BuildsManager.Data
     [Serializable]
     public struct AddonUsedInformation : IAddonUsed
     {
-        [field: SerializeField] public bool IsUsed { get; set; }
+        public AddonUsedInformation(string name)
+        {
+            Name = name;
+            IsUsed = false;
+        }
+        
         [field: SerializeField] public string Name { get; set; }
+        [field: SerializeField] public bool IsUsed { get; set; }
     }
 
     public interface IAddonUsed

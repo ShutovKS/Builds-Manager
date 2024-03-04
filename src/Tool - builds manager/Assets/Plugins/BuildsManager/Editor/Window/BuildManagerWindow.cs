@@ -140,9 +140,10 @@ namespace BuildsManager.Window
                     settingsBuild.isEnabled = EditorGUILayout.Toggle("Enabled", settingsBuild.isEnabled);
                     settingsBuild.isCompress = EditorGUILayout.Toggle("Compress", settingsBuild.isCompress);
                     EditorGUILayout.EndHorizontal();
-                    
+
                     settingsBuild.target = (BuildTarget)EditorGUILayout.EnumPopup("Build Target", settingsBuild.target);
-                    settingsBuild.options = (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
+                    settingsBuild.options =
+                        (BuildOptions)EditorGUILayout.EnumFlagsField("Build Options", settingsBuild.options);
                     DrawAddonsUsed(settingsBuild);
 
                     EditorGUILayout.BeginHorizontal();
@@ -179,7 +180,7 @@ namespace BuildsManager.Window
 
             static void DrawAddonsUsed(BuildData buildData)
             {
-                if (Settings == null || Settings.addonsUsedData == null || Settings.addonsUsedData.addonsUsed == null)
+                if (Settings == null || Settings.addonsUsedData == null || Settings.addonsUsedData.AddonsUsed == null)
                 {
                     return;
                 }
@@ -190,20 +191,38 @@ namespace BuildsManager.Window
                 {
                     ++EditorGUI.indentLevel;
 
-                    var allAddonsUsed = Settings.addonsUsedData.addonsUsed;
-                    var selectedAddons = buildData.addonsUsed ?? new List<AddonUsed>(allAddonsUsed);
+                    var allAddonsUsed = Settings.addonsUsedData.AddonsUsed;
+                    List<AddonUsedInformation> selectedAddons;
 
-                    foreach (var addonUsed in allAddonsUsed.Where(addonUsed =>
-                                 selectedAddons.All(x => x.name != addonUsed.name)))
+                    if (buildData.addonsUsed == null)
                     {
-                        selectedAddons.Add(addonUsed);
+                        selectedAddons = allAddonsUsed
+                            .Select(addonUsedDetailed => new AddonUsedInformation(addonUsedDetailed.Name))
+                            .ToList();
+                    }
+                    else
+                    {
+                        selectedAddons = buildData.addonsUsed;
                     }
 
-                    selectedAddons.RemoveAll(x => allAddonsUsed.All(y => y.name != x.name));
 
-                    foreach (var addonUsed in selectedAddons)
+                    foreach (var addonUsed in allAddonsUsed.Where(addonUsed =>
+                                 selectedAddons.All(x => x.Name != addonUsed.Name)))
                     {
-                        addonUsed.isUsed = EditorGUILayout.ToggleLeft(addonUsed.name, addonUsed.isUsed);
+                        selectedAddons.Add(new AddonUsedInformation(addonUsed.Name));
+                    }
+
+                    selectedAddons.RemoveAll(x => allAddonsUsed.All(y => y.Name != x.Name));
+
+                    for (var index = 0; index < selectedAddons.Count; index++)
+                    {
+                        var addonUsed = selectedAddons[index];
+                        
+                        selectedAddons[index] = new AddonUsedInformation()
+                        {
+                            Name = addonUsed.Name,
+                            IsUsed = EditorGUILayout.ToggleLeft(addonUsed.Name, addonUsed.IsUsed)
+                        };
                     }
 
                     buildData.addonsUsed = selectedAddons;

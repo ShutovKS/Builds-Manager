@@ -149,7 +149,8 @@ namespace BuildsManager.Core
 
         #region Base methods
 
-        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions, IEnumerable<AddonUsed> addonsUsed,
+        private static void BaseBuild(BuildPlayerOptions buildPlayerOptions,
+            IEnumerable<AddonUsedInformation> addonsUsed,
             bool isReleaseBuild)
         {
             var targetGroup = buildPlayerOptions.target.ToBuildTargetGroup();
@@ -175,8 +176,26 @@ namespace BuildsManager.Core
             }
 
             var preBuildDefines = GeneralBuildData.generalScriptingDefineSymbols;
-            var buildDefines = addonsUsed.Aggregate(preBuildDefines,
-                (current, addonUsed) => current + ";" + string.Join(";", addonUsed.defines));
+
+            var addonsUsedDetailed = new List<AddonUsedDetailed>();
+
+            foreach (var addonUsed in addonsUsed)
+            {
+                if (!addonUsed.IsUsed)
+                {
+                    continue;
+                }
+
+                foreach (var addonUsedDetailed in GeneralBuildData.addonsUsedData.AddonsUsed.Where(
+                             addonUsedDetailed => addonUsedDetailed.Name == addonUsed.Name))
+                {
+                    addonsUsedDetailed.Add(addonUsedDetailed);
+                    break;
+                }
+            }
+
+            var buildDefines = addonsUsedDetailed.Aggregate(preBuildDefines,
+                (current, addonUsed) => current + ";" + string.Join(";", addonUsed.Defines));
             PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, buildDefines);
 
             AssetDatabase.Refresh();
