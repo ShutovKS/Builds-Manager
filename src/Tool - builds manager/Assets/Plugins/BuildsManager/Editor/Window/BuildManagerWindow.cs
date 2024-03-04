@@ -50,20 +50,20 @@ namespace BuildsManager.Window
 
         private static void DrawGlobalBuildData()
         {
-            _globalDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_globalDataFoldout, "Глобальные данные");
+            _globalDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_globalDataFoldout, "Global data");
 
             if (_globalDataFoldout)
             {
                 ++EditorGUI.indentLevel;
 
-                PlayerSettings.companyName = EditorGUILayout.TextField("Название компании", PlayerSettings.companyName);
-                PlayerSettings.productName = EditorGUILayout.TextField("Название проекта", PlayerSettings.productName);
-                PlayerSettings.bundleVersion = EditorGUILayout.TextField("Версия", PlayerSettings.bundleVersion);
+                PlayerSettings.companyName = EditorGUILayout.TextField("Company name", PlayerSettings.companyName);
+                PlayerSettings.productName = EditorGUILayout.TextField("Project name", PlayerSettings.productName);
+                PlayerSettings.bundleVersion = EditorGUILayout.TextField("Version", PlayerSettings.bundleVersion);
 
                 EditorGUILayout.Space(5);
 
-                EditorGUILayout.LabelField("Для Android");
-                PlayerSettings.Android.bundleVersionCode = EditorGUILayout.IntField("Версия пакета Android",
+                EditorGUILayout.LabelField("For Android");
+                PlayerSettings.Android.bundleVersionCode = EditorGUILayout.IntField("Android package version",
                     PlayerSettings.Android.bundleVersionCode);
                 PlayerSettings.Android.keystorePass =
                     EditorGUILayout.TextField("Android keystore pass", PlayerSettings.Android.keystorePass);
@@ -78,7 +78,7 @@ namespace BuildsManager.Window
 
         private static void DrawBuildsData()
         {
-            _buildsDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_buildsDataFoldout, "Данные билда");
+            _buildsDataFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(_buildsDataFoldout, "Build data");
 
             if (_buildsDataFoldout)
             {

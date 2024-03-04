@@ -13,31 +13,7 @@ MonoBehaviour:
   m_Name: GeneralBuildData
   m_EditorClassIdentifier: 
   isReleaseBuild: 0
-  builds:
-  - isEnabled: 1
-    isCompress: 1
-    buildPath: Builds/Tool_-_builds_manager_0.1_Windows64/Tool_-_builds_manager_0.1/Tool_-_builds_manager.exe
-    addonsUsed: []
-    options: 0
-    target: 19
-  - isEnabled: 1
-    isCompress: 0
-    buildPath: Builds/Tool_-_builds_manager_0.1_Android/Tool_-_builds_manager_0.1/Tool_-_builds_manager.apk
-    addonsUsed: []
-    options: 0
-    target: 13
-  - isEnabled: 1
-    isCompress: 1
-    buildPath: Builds/Tool_-_builds_manager_0.1_WebGL/Tool_-_builds_manager_0.1/Tool_-_builds_manager
-    addonsUsed: []
-    options: 0
-    target: 20
-  - isEnabled: 1
-    isCompress: 0
-    buildPath: Builds/Tool_-_builds_manager_0.1_Linux/Tool_-_builds_manager_0.1/Tool_-_builds_managerx86_64
-    addonsUsed: []
-    options: 0
-    target: 24
+  builds: []
   addonsUsedData: {fileID: 11400000, guid: 9b668bd4d2fee31499434e75a22ea616, type: 2}
   generalScriptingDefineSymbols: 
   outputRoot: Builds/
