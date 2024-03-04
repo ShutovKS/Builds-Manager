@@ -19,7 +19,7 @@ namespace BuildsManager.Utility
             s = s.Replace("$MONTH", $"{usedDate.Date.Month}");
             s = s.Replace("$DAY", $"{usedDate.Date.Day}");
             s = s.Replace("$TIME", $"{usedDate.Hour}_{usedDate.Minute}");
-            s = s.Replace("$ADDONS", $"{data.addonsUsed?.Aggregate("", (current, addonUsed) => current + addonUsed.name + " ")}");
+            s = s.Replace("$ADDONS", $"{data.addonsUsed?.Aggregate("", (current, addonUsed) => current + addonUsed.Name + " ")}");
             s = s.Replace("$EXECUTABLE", GetBuildTargetExecutable(data.target));
             return s;
         }
@@ -36,7 +36,7 @@ namespace BuildsManager.Utility
             s = s.Replace("$MONTH", $"{usedDate.Date.Month}");
             s = s.Replace("$DAY", $"{usedDate.Date.Day}");
             s = s.Replace("$TIME", $"{usedDate.Hour}_{usedDate.Minute}");
-            s = s.Replace("$ADDONS", $"{data.addonsUsed?.Aggregate("", (current, addonUsed) => current + addonUsed.name + " ")}");
+            s = s.Replace("$ADDONS", $"{data.addonsUsed?.Aggregate("", (current, addonUsed) => current + addonUsed.Name + " ")}");
             s = s.Contains("$EXECUTABLE")
                 ? s.Replace("$EXECUTABLE", GetBuildTargetExecutable(data.target))
                 : s + ".zip";
