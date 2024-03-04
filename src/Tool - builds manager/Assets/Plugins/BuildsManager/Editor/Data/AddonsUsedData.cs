@@ -11,6 +11,11 @@ namespace BuildsManager.Data
 
         private void OnValidate()
         {
+            if (AddonsUsed.Count == 0)
+            {
+                return;
+            }
+            
             FixNullName();
             CheckDuplicate();
         }

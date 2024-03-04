@@ -12,12 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cde2bbb25a0e415a9dbdc33eacfa3717, type: 3}
   m_Name: AddonsUsedData
   m_EditorClassIdentifier: 
-  <AddonsUsed>k__BackingField:
-  - <Name>k__BackingField: Default1_Duplicate_Duplicate_Duplicate
-    <Defines>k__BackingField: []
-  - <Name>k__BackingField: Default1_Duplicate_Duplicate
-    <Defines>k__BackingField: []
-  - <Name>k__BackingField: Default1_Duplicate
-    <Defines>k__BackingField: []
-  - <Name>k__BackingField: Default1
-    <Defines>k__BackingField: []
+  <AddonsUsed>k__BackingField: []
