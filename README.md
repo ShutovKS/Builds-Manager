@@ -1,6 +1,6 @@
 # Build Manager
 
-[Russian](./README.md) | Eng
+Eng | [Rus](resources/localization_readme/README_RU.md)
 
 ## Description
 
