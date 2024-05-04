@@ -67,6 +67,8 @@ Clicking on `+` creates an addon that contains the name displayed in the setting
 
 Download and use the .unitypackage from the [Releases](https://github.com/ShutovKS/Builds-Manager/releases) section.
 
+You can also install from [Unity Asset Store](https://assetstore.unity.com/packages/tools/utilities/builds-manager-278887).
+
 ## Information
 
 ### Author and Developer
